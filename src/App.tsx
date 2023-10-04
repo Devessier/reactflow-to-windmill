@@ -142,7 +142,7 @@ function App() {
             {Object.entries(availableNodeTypes).map(([type, label]) => (
               <div
                 key={type}
-                className="flex justify-center items-center text-center px-4 py-4 border border-red-500 rounded"
+                className="flex justify-center items-center text-center px-4 py-4 border text-slate-800 rounded-md relative bg-slate-200 font-mono cursor-move"
                 draggable
                 onDragStart={(event) => onDragStart(event, type as NodeType)}
               >
@@ -228,8 +228,8 @@ function WorkflowInputForm({
   node: Node<InputNodeData>;
   setNode: (node: Node<InputNodeData>) => void;
 }) {
-  const [properties, setProperties] = useState(
-    node.data.properties.concat({ id: "empty", name: "", type: "string" })
+  const [properties, setProperties] = useState(() =>
+    node.data.properties.concat({ id: nanoid(), name: "", type: "string" })
   );
 
   return (
@@ -332,8 +332,8 @@ function ConditionBranchesForm({
   node: Node<ConditionNodeData>;
   setNode: (node: Node<ConditionNodeData>) => void;
 }) {
-  const [conditions, setConditions] = useState(
-    node.data.conditions.concat({ id: "empty", label: "", expression: "" })
+  const [conditions, setConditions] = useState(() =>
+    node.data.conditions.concat({ id: nanoid(), label: "", expression: "" })
   );
 
   return (

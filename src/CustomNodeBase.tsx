@@ -10,8 +10,8 @@ export function CustomNodeBase({
   return (
     <div
       className={clsx([
-        "border-2 rounded-sm relative bg-white",
-        { "shadow-2xl": isFocused },
+        "text-slate-800 rounded-md relative bg-slate-200 font-mono",
+        { "ring-2 ring-offset-1 ring-slate-600": isFocused },
       ])}
     >
       {children}

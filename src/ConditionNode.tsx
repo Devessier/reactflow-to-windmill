@@ -20,9 +20,9 @@ export const ConditionNode = memo((props: NodeProps<ConditionNodeData>) => {
         isConnectable={props.isConnectable}
       />
 
-      <div className="px-4 py-2 text-center mb-2">Condition</div>
+      <div className="px-4 py-2 text-center">Condition</div>
 
-      <div className="flex">
+      <div className="flex border-t border-t-slate-300 pt-2">
         {sources.map((target, index) => (
           <div
             key={index}

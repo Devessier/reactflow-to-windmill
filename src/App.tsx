@@ -119,7 +119,11 @@ function App() {
 
   return (
     <ReactFlowProvider>
-      <div className="min-h-screen h-full grid grid-rows-1 grid-cols-2 divide-x">
+      <div className="min-h-screen h-full grid grid-rows-[auto,1fr,1fr] md:grid-rows-[auto,1fr] md:grid-cols-2 divide-y md:divide-x">
+        <div className="p-4 md:col-span-2 h-min">
+          <h1 className="text-center font-semibold text-xl">React Flow to Windmill</h1>
+        </div>
+
         <div className="grid grid-rows-[1fr,auto] divide-y">
           <div ref={reactFlowWrapper} className="grid grid-cols-1 grid-rows-1">
             <ReactFlow

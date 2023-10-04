@@ -295,7 +295,7 @@ function WorkflowInputForm({
             type="button"
             onClick={() => {
               setProperties(
-                properties.filter((p, i) => {
+                properties.filter((_p, i) => {
                   return i !== index;
                 })
               );
@@ -393,7 +393,7 @@ function ConditionBranchesForm({
             type="button"
             onClick={() => {
               setConditions(
-                conditions.filter((p, i) => {
+                conditions.filter((_p, i) => {
                   return i !== index;
                 })
               );

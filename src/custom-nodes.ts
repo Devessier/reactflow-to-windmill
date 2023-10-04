@@ -8,13 +8,16 @@ export const customNodes = {
   "app-condition": ConditionNode,
 };
 
+export interface InputProperty {
+  id: string;
+  name: string;
+  type: "string" | "number";
+  required: boolean;
+}
+
 export interface InputNodeData {
   type: "input";
-  properties: Array<{
-    id: string;
-    name: string;
-    type: "string" | "number";
-  }>;
+  properties: Array<InputProperty>;
 }
 
 export interface ConditionNodeData {
@@ -22,9 +25,16 @@ export interface ConditionNodeData {
   conditions: Array<{ id: string; label: string; expression: string }>;
 }
 
+export interface ActionInput {
+  id: string;
+  parameter: string;
+  expression: string;
+}
+
 export interface ActionNodeData {
   type: "action";
   actionName?: string;
+  inputs: Array<ActionInput>;
 }
 
 export type CustomNodeData = InputNodeData | ConditionNodeData | ActionNodeData;

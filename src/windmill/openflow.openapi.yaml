@@ -1,0 +1,485 @@
+openapi: "3.0.3"
+
+info:
+  version: 1.172.1
+  title: OpenFlow Spec
+  contact:
+    name: Ruben Fiszel
+    email: ruben@windmill.dev
+    url: https://windmill.dev
+
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+paths: {}
+
+externalDocs:
+  description: documentation portal
+  url: https://windmill.dev
+
+components:
+  schemas:
+    OpenFlow:
+      type: object
+      properties:
+        summary:
+          type: string
+        description:
+          type: string
+        value:
+          $ref: "#/components/schemas/FlowValue"
+        schema:
+          type: object
+      required:
+        - summary
+        - value
+
+    FlowValue:
+      type: object
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowModule"
+        failure_module:
+          $ref: "#/components/schemas/FlowModule"
+        same_worker:
+          type: boolean
+        concurrent_limit:
+          type: number
+        concurrency_time_window_s:
+          type: number
+        skip_expr:
+          type: string
+        cache_ttl:
+          type: number
+      required:
+        - modules
+
+    Retry:
+      type: object
+      properties:
+        constant:
+          type: object
+          properties:
+            attempts:
+              type: integer
+            seconds:
+              type: integer
+        exponential:
+          type: object
+          properties:
+            attempts:
+              type: integer
+            multiplier:
+              type: integer
+            seconds:
+              type: integer
+
+    FlowModule:
+      type: object
+      properties:
+        id:
+          type: string
+        value:
+          $ref: "#/components/schemas/FlowModuleValue"
+        stop_after_if:
+          type: object
+          properties:
+            skip_if_stopped:
+              type: boolean
+            expr:
+              type: string
+          required:
+            - expr
+        sleep:
+          $ref: "#/components/schemas/InputTransform"
+        cache_ttl:
+          type: number
+        timeout:
+          type: number
+        summary:
+          type: string
+        mock:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            return_value: {}
+        suspend:
+          type: object
+          properties:
+            required_events:
+              type: integer
+            timeout:
+              type: integer
+            resume_form:
+              type: object
+              properties:
+                schema:
+                  type: object
+        retry:
+          $ref: "#/components/schemas/Retry"
+      required:
+        - value
+        - id
+
+    InputTransform:
+      oneOf:
+        - $ref: "#/components/schemas/StaticTransform"
+        - $ref: "#/components/schemas/JavascriptTransform"
+      discriminator:
+        propertyName: type
+        mapping:
+          static: "#/components/schemas/StaticTransform"
+          javascript: "#/components/schemas/JavascriptTransform"
+
+    StaticTransform:
+      type: object
+      properties:
+        value: {}
+        type:
+          type: string
+          enum:
+            - javascript
+      required:
+        - expr
+        - type
+
+    JavascriptTransform:
+      type: object
+      properties:
+        expr:
+          type: string
+        type:
+          type: string
+          enum:
+            - javascript
+      required:
+        - expr
+        - type
+
+    FlowModuleValue:
+      oneOf:
+        - $ref: "#/components/schemas/RawScript"
+        - $ref: "#/components/schemas/PathScript"
+        - $ref: "#/components/schemas/PathFlow"
+        - $ref: "#/components/schemas/ForloopFlow"
+        - $ref: "#/components/schemas/BranchOne"
+        - $ref: "#/components/schemas/BranchAll"
+        - $ref: "#/components/schemas/Identity"
+        - $ref: "#/components/schemas/Graphql"
+      discriminator:
+        propertyName: type
+        mapping:
+          rawscript: "#/components/schemas/RawScript"
+          script: "#/components/schemas/PathScript"
+          flow: "#/components/schemas/PathFlow"
+          forloopflow: "#/components/schemas/ForloopFlow"
+          branchone: "#/components/schemas/BranchOne"
+          branchall: "#/components/schemas/BranchAll"
+          identity: "#/components/schemas/Identity"
+          graphql: "#/components/schemas/Graphql"
+
+    RawScript:
+      type: object
+      properties:
+        # to be made required once migration is over
+        input_transforms:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/InputTransform"
+        content:
+          type: string
+        language:
+          type: string
+          enum:
+            - deno
+            - bun
+            - python3
+            - go
+            - bash
+            - powershell
+            - postgresql
+            - mysql
+            - bigquery
+            - snowflake
+            - graphql
+            - nativets
+        path:
+          type: string
+        lock:
+          type: string
+        type:
+          type: string
+          enum:
+            - rawscript
+        tag:
+          type: string
+        concurrent_limit:
+          type: number
+        concurrency_time_window_s:
+          type: number
+      required:
+        - type
+        - content
+        - language
+        - input_transforms
+
+    PathScript:
+      type: object
+      properties:
+        input_transforms:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/InputTransform"
+        path:
+          type: string
+        hash:
+          type: string
+        type:
+          type: string
+          enum:
+            - script
+      required:
+        - type
+        - path
+        - input_transforms
+
+    PathFlow:
+      type: object
+      properties:
+        input_transforms:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/InputTransform"
+        path:
+          type: string
+        type:
+          type: string
+          enum:
+            - flow
+      required:
+        - type
+        - path
+        - input_transforms
+
+    ForloopFlow:
+      type: object
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowModule"
+        iterator:
+          $ref: "#/components/schemas/InputTransform"
+        skip_failures:
+          type: boolean
+        type:
+          type: string
+          enum:
+            - forloopflow
+        parallel:
+          type: boolean
+        parallelism:
+          type: integer
+      required:
+        - modules
+        - iterator
+        - skip_failures
+        - type
+
+    BranchOne:
+      type: object
+      properties:
+        branches:
+          type: array
+          items:
+            type: object
+            properties:
+              summary:
+                type: string
+              expr:
+                type: string
+              modules:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FlowModule"
+            required:
+              - modules
+              - expr
+        default:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowModule"
+          required: [modules]
+        type:
+          type: string
+          enum:
+            - branchone
+      required:
+        - branches
+        - default
+        - type
+
+    BranchAll:
+      type: object
+      properties:
+        branches:
+          type: array
+          items:
+            type: object
+            properties:
+              summary:
+                type: string
+              skip_failure:
+                type: boolean
+              modules:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FlowModule"
+            required:
+              - modules
+              - expr
+        type:
+          type: string
+          enum:
+            - branchall
+        parallel:
+          type: boolean
+      required:
+        - branches
+        - type
+
+    Identity:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - identity
+        flow:
+          type: boolean
+
+      required:
+        - type
+
+    Http:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - http
+      required:
+        - type
+
+    Graphql:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - graphql
+      required:
+        - type
+
+    FlowStatus:
+      type: object
+      properties:
+        step:
+          type: integer
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowStatusModule"
+        failure_module:
+          allOf:
+            - $ref: "#/components/schemas/FlowStatusModule"
+            - type: object
+              properties:
+                parent_module:
+                  type: string
+
+        retry:
+          type: object
+          properties:
+            fail_count:
+              type: integer
+            failed_jobs:
+              type: array
+              items:
+                type: string
+                format: uuid
+      required:
+        - step
+        - modules
+        - failure_module
+
+    FlowStatusModule:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - WaitingForPriorSteps
+            - WaitingForEvents
+            - WaitingForExecutor
+            - InProgress
+            - Success
+            - Failure
+        id:
+          type: string
+        job:
+          type: string
+          format: uuid
+        count:
+          type: integer
+        iterator:
+          type: object
+          properties:
+            index:
+              type: integer
+            itered:
+              type: array
+              items: {}
+            args: {}
+        flow_jobs:
+          type: array
+          items:
+            type: string
+        branch_chosen:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [branch, default]
+            branch:
+              type: integer
+          required:
+            - type
+        branchall:
+          type: object
+          properties:
+            branch:
+              type: integer
+            len:
+              type: integer
+          required:
+            - branch
+            - len
+        approvers:
+          type: array
+          items:
+            type: object
+            properties:
+              resume_id:
+                type: integer
+              approver:
+                type: string
+            required:
+              - resume_id
+              - approver
+
+      required: [type]

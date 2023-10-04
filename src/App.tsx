@@ -12,6 +12,7 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import Editor from "@monaco-editor/react";
 import {
   ActionNodeData,
   ConditionNodeData,
@@ -19,6 +20,7 @@ import {
   InputNodeData,
   customNodes,
 } from "./custom-nodes";
+import { buildFlowsFromNodesAndEdges } from "./build-flows";
 
 const initialNodes: Node<CustomNodeData>[] = [
   {
@@ -98,7 +100,7 @@ function App() {
             id: nanoid(),
             position,
             type: "app-action",
-            data: { type: "action", actionName: undefined },
+            data: { type: "action", actionName: undefined, inputs: [] },
           });
         }
 
@@ -121,7 +123,9 @@ function App() {
     <ReactFlowProvider>
       <div className="min-h-screen h-full grid grid-rows-[auto,1fr,1fr] md:grid-rows-[auto,1fr] md:grid-cols-2 divide-y md:divide-x">
         <div className="p-4 md:col-span-2 h-min">
-          <h1 className="text-center font-semibold text-xl">React Flow to Windmill</h1>
+          <h1 className="text-center font-semibold text-xl">
+            React Flow to Windmill
+          </h1>
         </div>
 
         <div className="grid grid-rows-[1fr,auto] divide-y">
@@ -158,9 +162,11 @@ function App() {
 
         <div className="p-4">
           {panelToDisplay === "json" ? (
-            <>
-              <h2 className="font-semibold text-xl">JSON Workflow</h2>
-            </>
+            <div className="grid grid-rows-[auto,1fr] h-full">
+              <h2 className="font-semibold text-xl mb-6">JSON Workflow</h2>
+
+              <WorkflowDefinition nodes={nodes} edges={edges} />
+            </div>
           ) : panelToDisplay === "input" ? (
             <>
               <h2 className="font-semibold text-xl mb-6">Input</h2>
@@ -233,7 +239,12 @@ function WorkflowInputForm({
   setNode: (node: Node<InputNodeData>) => void;
 }) {
   const [properties, setProperties] = useState(() =>
-    node.data.properties.concat({ id: nanoid(), name: "", type: "string" })
+    node.data.properties.concat({
+      id: nanoid(),
+      name: "",
+      type: "string",
+      required: false,
+    })
   );
 
   return (
@@ -242,7 +253,15 @@ function WorkflowInputForm({
       onSubmit={(e) => {
         e.preventDefault();
 
-        setNode({ ...node, data: { ...node.data, properties } });
+        setNode({
+          ...node,
+          data: {
+            ...node.data,
+            properties: properties.filter(
+              (property) => property.name.trim().length > 0
+            ),
+          },
+        });
       }}
     >
       {properties.map(({ id, name, type }, index) => (
@@ -312,7 +331,7 @@ function WorkflowInputForm({
         onClick={() => {
           setProperties([
             ...properties,
-            { id: nanoid(), name: "", type: "string" },
+            { id: nanoid(), name: "", type: "string", required: false },
           ]);
         }}
       >
@@ -346,7 +365,15 @@ function ConditionBranchesForm({
       onSubmit={(e) => {
         e.preventDefault();
 
-        setNode({ ...node, data: { ...node.data, conditions } });
+        setNode({
+          ...node,
+          data: {
+            ...node.data,
+            conditions: conditions.filter(
+              (condition) => condition.label.trim().length > 0
+            ),
+          },
+        });
       }}
     >
       {conditions.map(({ id, label, expression }, index) => (
@@ -435,6 +462,13 @@ function ActionForm({
   setNode: (node: Node<ActionNodeData>) => void;
 }) {
   const [actionName, setActionName] = useState(node.data.actionName);
+  const [inputs, setInputs] = useState(() =>
+    node.data.inputs.concat({
+      id: nanoid(),
+      parameter: "",
+      expression: "",
+    })
+  );
 
   return (
     <form
@@ -442,7 +476,14 @@ function ActionForm({
       onSubmit={(e) => {
         e.preventDefault();
 
-        setNode({ ...node, data: { ...node.data, actionName } });
+        setNode({
+          ...node,
+          data: {
+            ...node.data,
+            actionName,
+            inputs: inputs.filter((input) => input.parameter.trim().length > 0),
+          },
+        });
       }}
     >
       <input
@@ -454,6 +495,63 @@ function ActionForm({
         }}
       />
 
+      <h3 className="font-medium">Parameters</h3>
+
+      {inputs.map(({ id, parameter, expression }, index) => (
+        <div key={id} className="grid grid-cols-[1fr,1fr,auto] gap-x-4">
+          <input
+            value={parameter}
+            placeholder="Parameter"
+            className="block w-full rounded-md border-0 px-1 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6"
+            onChange={(e) => {
+              setInputs(
+                inputs.map((p, i) => {
+                  if (i !== index) {
+                    return p;
+                  }
+
+                  return Object.assign({}, inputs[index], {
+                    parameter: e.currentTarget.value,
+                  });
+                })
+              );
+            }}
+          />
+
+          <input
+            value={expression}
+            placeholder="Expression"
+            className="block w-full rounded-md border-0 px-1 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6"
+            onChange={(e) => {
+              setInputs(
+                inputs.map((p, i) => {
+                  if (i !== index) {
+                    return p;
+                  }
+
+                  return Object.assign({}, inputs[index], {
+                    expression: e.currentTarget.value,
+                  });
+                })
+              );
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              setInputs(
+                inputs.filter((_p, i) => {
+                  return i !== index;
+                })
+              );
+            }}
+          >
+            🗑️
+          </button>
+        </div>
+      ))}
+
       <button
         type="submit"
         className="mt-6 rounded-md bg-slate-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600"
@@ -461,6 +559,34 @@ function ActionForm({
         Save
       </button>
     </form>
+  );
+}
+
+function WorkflowDefinition({
+  nodes,
+  edges,
+}: {
+  nodes: Array<Node<CustomNodeData>>;
+  edges: Array<Edge>;
+}) {
+  const flowDefinitionResult = buildFlowsFromNodesAndEdges({
+    nodes,
+    edges,
+  });
+  console.log("flowDefinitionResult", flowDefinitionResult);
+
+  if (flowDefinitionResult.ok === false) {
+    return <p>Failed to compile the workflow.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 grid-rows-1">
+      <Editor
+        defaultLanguage="json"
+        options={{ readOnly: true }}
+        value={JSON.stringify(flowDefinitionResult.flow, null, 2)}
+      />
+    </div>
   );
 }
 

@@ -79,33 +79,27 @@ function addNodesToModuleList({
         (edge) =>
           edge.source === initialNode.id && edge.sourceHandle === "default"
       );
-      if (defaultCaseEdge === undefined) {
-        console.error("Could not find default case edge for condition", {
-          initialNodeId: initialNode.id,
-        });
-
-        break;
-      }
-
-      const defaultCaseFirstNode = nodes.find(
-        (node) => node.id === defaultCaseEdge.target
-      );
-      if (defaultCaseFirstNode === undefined) {
-        console.error("Could not find default case node for condition", {
-          defaultCaseEdgeId: defaultCaseEdge.id,
-        });
-
-        break;
-      }
-
       const defaultModules: FlowModule[] = [];
 
-      addNodesToModuleList({
-        initialNode: defaultCaseFirstNode,
-        edges,
-        nodes,
-        modules: defaultModules,
-      });
+      if (defaultCaseEdge !== undefined) {
+        const defaultCaseFirstNode = nodes.find(
+          (node) => node.id === defaultCaseEdge.target
+        );
+        if (defaultCaseFirstNode === undefined) {
+          console.error("Could not find default case node for condition", {
+            defaultCaseEdgeId: defaultCaseEdge.id,
+          });
+
+          break;
+        }
+
+        addNodesToModuleList({
+          initialNode: defaultCaseFirstNode,
+          edges,
+          nodes,
+          modules: defaultModules,
+        });
+      }
 
       const branches: BranchOne["branches"] = [];
 

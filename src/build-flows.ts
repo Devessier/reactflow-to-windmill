@@ -41,13 +41,6 @@ function addNodesToModuleList({
   edges: FlowEdge[];
   modules: FlowModule[];
 }) {
-  console.log("add node to module list", {
-    initialNode,
-    edges,
-    nodes,
-    modules,
-  });
-
   switch (initialNode.data.type) {
     case "input": {
       break;
